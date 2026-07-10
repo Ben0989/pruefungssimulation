@@ -1,17 +1,17 @@
-Fahrlehrerprüfung BE Trainer – Version 2
+Fahrlehrerprüfung BE – Lerntrainer V3
 
 Start:
-1. ZIP entpacken.
-2. index.html im Browser öffnen.
+1. ZIP-Datei entpacken.
+2. Die Datei index.html im Browser öffnen.
 
-Neu:
-- getrennte Lern- und Simulationsmodi für mündliche und schriftliche Prüfung
-- automatische Stichwortprüfung mit Prozentwert und Schulnote
-- Anzeige erkannter und fehlender Kernaspekte
-- Zurück- und Weiter-Schaltflächen
-- schriftliche Simulation mit 5 Aufgaben: Verkehrsverhalten, Recht, Technik und 2x Pädagogik/Fahrlehrerwesen
-- mündliche Simulation mit Prüfungskomplexen aus allen vier Fachgebieten
-- beim PDF-Import getrennte Folgefragen wurden zu zusammenhängenden Komplexen verbunden
+Neu in Version 3:
+- Volltextauswertung statt gekürzter Stichwortkästen
+- keine Auslassungspunkte bei längeren Musterlösungen
+- vollständige Auflistung erkannter und fehlender Kernaspekte
+- richtige Musterlösung direkt in der Auswertung
+- ausformulierte Verbesserungsempfehlung
+- Bewertung von Inhalt, Umfang, Struktur und Begründung
+- Schulnote 1 bis 6
 
 Hinweis:
-Die automatische Auswertung ist eine Lernhilfe. Stark abweichende, aber fachlich richtige Formulierungen können zu niedrig bewertet werden. Maßgeblich bleibt die Musterlösung und der aktuelle Rechtsstand.
+Die automatische Auswertung ist eine offline arbeitende Lernhilfe. Sie verwendet die hinterlegten Musterlösungen und kann keine menschliche fachliche Prüfung vollständig ersetzen. Bei Rechtsfragen gilt der Rechtsstand am Prüfungstag.

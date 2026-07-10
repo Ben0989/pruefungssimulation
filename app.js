@@ -73,16 +73,65 @@ function concepts(q){
  const all=[];(q.answer||[]).forEach((line,idx)=>{let words=norm(line).split(/\s+/).filter(w=>w.length>=4&&!STOP.has(w));words=[...new Set(words.map(stem).filter(w=>w.length>=3))];if(words.length){all.push({label:line,terms:words.slice(0,Math.min(4,words.length)),required:idx<12})}});return all.slice(0,18)
 }
 function hasTerm(text,t){const n=norm(text),st=stem(t);if(n.includes(t)||n.split(/\s+/).map(stem).includes(st))return true;for(const [k,alts] of Object.entries(SYN)){const kk=stem(norm(k));if(st===kk&&alts.some(a=>n.includes(norm(a))))return true;if(alts.map(a=>stem(norm(a))).includes(st)&&n.includes(norm(k)))return true}return false}
+function scoreAnswer(q, ans){
+ const cs=concepts(q);
+ const results=cs.map(c=>({...c,matched:c.terms.some(t=>hasTerm(ans,t))}));
+ const matched=results.filter(r=>r.matched).length;
+ const total=Math.max(1,results.length);
+ const coverage=Math.round(matched/total*100);
+ const answerWords=norm(ans).split(/\s+/).filter(Boolean).length;
+ const structureBonus=(ans.match(/\n|\d+[.)]|[-•]/g)||[]).length>=2?5:0;
+ const explanationBonus=/(weil|dadurch|daher|deshalb|folg|gefahr|beispiel|bedeutet|ziel|somit)/i.test(ans)?5:0;
+ const lengthPenalty=answerWords<15?10:answerWords<30?5:0;
+ const pct=Math.max(0,Math.min(100,coverage+structureBonus+explanationBonus-lengthPenalty));
+ return {results,matched,total,coverage,pct,answerWords,structureBonus,explanationBonus,lengthPenalty};
+}
+function gradeFor(pct){return pct>=92?'1 (sehr gut)':pct>=81?'2 (gut)':pct>=67?'3 (befriedigend)':pct>=50?'4 (ausreichend)':pct>=30?'5 (mangelhaft)':'6 (ungenügend)'}
+function qualityText(score){
+ if(score.pct>=92)return 'Die Antwort deckt den Erwartungshorizont nahezu vollständig ab, ist fachlich tragfähig und ausreichend erläutert.';
+ if(score.pct>=81)return 'Die wesentlichen Inhalte sind enthalten. Einzelne Ergänzungen oder eine präzisere Begründung würden die Antwort vervollständigen.';
+ if(score.pct>=67)return 'Die Grundrichtung stimmt, mehrere prüfungsrelevante Kernaspekte fehlen jedoch oder bleiben zu knapp.';
+ if(score.pct>=50)return 'Die Antwort ist teilweise verwertbar, erreicht den Erwartungshorizont aber nur knapp. Definition, Begründung und Beispiele sollten klarer getrennt werden.';
+ if(score.pct>=30)return 'Es sind einzelne zutreffende Ansätze vorhanden. Für eine bestandene Antwort fehlen wesentliche Fachbegriffe, Zusammenhänge und Erläuterungen.';
+ return 'Die Antwort ist inhaltlich zu unvollständig oder weicht deutlich vom Erwartungshorizont ab.';
+}
+function improvedAnswer(q, results){
+ const found=results.filter(r=>r.matched).map(r=>r.label);
+ const missing=results.filter(r=>!r.matched).map(r=>r.label);
+ const ordered=[...found,...missing];
+ if(!ordered.length)return 'Für diese Aufgabe ist noch keine ausformulierte Musterlösung hinterlegt.';
+ const intro=`Eine vollständige Antwort sollte zunächst die Fragestellung direkt beantworten und anschließend die wesentlichen Aspekte begründen.`;
+ return `${intro}\n\n${ordered.map((x,i)=>`${i+1}. ${x}`).join('\n')}\n\nAbschließend sollte der Bezug zur Verkehrssicherheit beziehungsweise zur Fahrschülerausbildung hergestellt werden, sofern die Aufgabe dies verlangt.`;
+}
 function evaluate(){
  const q=currentList[currentIndex],ans=$('#answerInput').value.trim();if(!ans)return;
  state.answers[answerKey(q)]=ans;
- const cs=concepts(q);const results=cs.map(c=>({...c,matched:c.terms.some(t=>hasTerm(ans,t))}));const matched=results.filter(r=>r.matched).length,total=Math.max(1,results.length),pct=Math.round(matched/total*100);
- let grade=pct>=92?'1 (sehr gut)':pct>=81?'2 (gut)':pct>=67?'3 (befriedigend)':pct>=50?'4 (ausreichend)':pct>=30?'5 (mangelhaft)':'6 (ungenügend)';
- const missing=results.filter(r=>!r.matched).slice(0,10);const found=results.filter(r=>r.matched).slice(0,10);
- $('#evaluation').innerHTML=`<div class="eval-head"><div><span class="muted">Automatische Stichwortprüfung</span><div class="grade">Note ${grade}</div></div><div class="score-circle">${pct}%</div></div><p><strong>${matched} von ${total}</strong> erwarteten Kernaspekten erkannt.</p>${found.length?`<div class="match-box good"><strong>Erkannt:</strong> ${found.map(x=>escapeHtml(shortLabel(x.label))).join(' · ')}</div>`:''}${missing.length?`<div class="match-box bad"><strong>Fehlende/anders formulierte Kernaspekte:</strong><ul>${missing.map(x=>`<li>${escapeHtml(shortLabel(x.label))}</li>`).join('')}</ul></div>`:''}<p class="solution-note">Die Auswertung erkennt Stichwörter und häufige Synonyme. Inhaltlich richtige, stark abweichend formulierte Antworten können zu niedrig bewertet werden. Die Musterlösung bleibt der verbindliche Vergleich.</p>`;
- $('#evaluation').classList.remove('hidden');$('#rating').classList.remove('hidden');state.lastEvaluation={id:q.id,pct,grade};save()
+ const score=scoreAnswer(q,ans);
+ const grade=gradeFor(score.pct);
+ const missing=score.results.filter(r=>!r.matched);
+ const found=score.results.filter(r=>r.matched);
+ const fullSolution=(q.answer||[]);
+ const formulation=improvedAnswer(q,score.results);
+ const detailRows=score.results.map(r=>`<li class="${r.matched?'aspect-found':'aspect-missing'}"><strong>${r.matched?'Enthalten':'Fehlt oder nicht eindeutig erkannt'}:</strong> ${escapeHtml(r.label)}</li>`).join('');
+ const strengths=found.length?`<ul>${found.map(x=>`<li>${escapeHtml(x.label)}</li>`).join('')}</ul>`:'<p>Es wurde noch kein Kernaspekt eindeutig erkannt.</p>';
+ const gaps=missing.length?`<ul>${missing.map(x=>`<li>${escapeHtml(x.label)}</li>`).join('')}</ul>`:'<p>Keine wesentlichen Kernaspekte fehlen.</p>';
+ $('#evaluation').innerHTML=`
+ <div class="eval-head"><div><span class="muted">Volltextauswertung</span><div class="grade">Note ${grade}</div></div><div class="score-circle">${score.pct}%</div></div>
+ <p class="evaluation-summary">${qualityText(score)}</p>
+ <div class="score-breakdown">
+   <div><strong>Inhaltliche Abdeckung:</strong> ${score.coverage}% (${score.matched} von ${score.total} Kernaspekten)</div>
+   <div><strong>Umfang:</strong> ${score.answerWords} Wörter${score.lengthPenalty?` · Abzug wegen sehr knapper Antwort: ${score.lengthPenalty} Punkte`:''}</div>
+   <div><strong>Struktur:</strong> ${score.structureBonus?'+5 Punkte – gegliedert':'keine erkennbare Gliederung'}</div>
+   <div><strong>Erläuterung:</strong> ${score.explanationBonus?'+5 Punkte – Begründung/Zusammenhang erkannt':'Begründung oder Zusammenhang sollte deutlicher werden'}</div>
+ </div>
+ <section class="feedback-section"><h3>Was an deiner Antwort richtig war</h3>${strengths}</section>
+ <section class="feedback-section"><h3>Was fehlt oder präziser formuliert werden sollte</h3>${gaps}</section>
+ <section class="feedback-section"><h3>Einzelauswertung aller Kernaspekte</h3><ul class="aspect-list">${detailRows}</ul></section>
+ <section class="feedback-section"><h3>Musterlösung / richtige Lösung</h3>${fullSolution.length?`<ol class="solution-list">${fullSolution.map(a=>`<li>${escapeHtml(a)}</li>`).join('')}</ol>`:'<p>Für diese Aufgabe ist keine Musterlösung hinterlegt.</p>'}</section>
+ <section class="feedback-section"><h3>So hätte die Antwort besser formuliert werden können</h3><div class="improved-answer">${escapeHtml(formulation).replace(/\n/g,'<br>')}</div></section>
+ <p class="solution-note">Die Volltextauswertung vergleicht deine gesamte Antwort mit den hinterlegten Kernaspekten, berücksichtigt Gliederung, Umfang und erkennbare Begründungen. Sie ersetzt keine menschliche Prüfungsbewertung; fachlich richtige Synonyme oder ungewöhnliche Formulierungen können weiterhin abweichend bewertet werden.</p>`;
+ $('#evaluation').classList.remove('hidden');$('#rating').classList.remove('hidden');state.lastEvaluation={id:q.id,pct:score.pct,grade};save()
 }
-function shortLabel(s){return s.length>90?s.slice(0,87)+'…':s}
 function escapeHtml(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
 function move(delta){const ni=currentIndex+delta;if(ni<0||ni>=currentList.length)return;persistAnswer();currentIndex=ni;showQuestion()}
 function persistAnswer(){const q=currentList[currentIndex];if(q)state.answers[answerKey(q)]=$('#answerInput').value;save()}
