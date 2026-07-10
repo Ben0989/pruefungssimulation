@@ -16,3 +16,5 @@ Funktionen:
 
 Hinweis:
 Der Lernstand wird lokal im jeweils verwendeten Browser gespeichert.
+
+UPDATE: Für sämtliche 163 Aufgaben aus „Heft Prüfungsaufgaben BE“ wurden kompakte Musterlösungen/Erwartungshorizonte ergänzt. Die Lösungen dienen dem Lernen und ersetzen bei Rechtsfragen nicht die Kontrolle des aktuellen Gesetzesstands.

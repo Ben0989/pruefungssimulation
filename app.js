@@ -44,7 +44,7 @@ function showQuestion(){
  $('#answerInput').value=''; $('#solution').classList.add('hidden'); $('#rating').classList.add('hidden');
  if(examMode){timerHandle=setInterval(()=>{seconds++;$('#timer').textContent=`Zeit: ${Math.floor(seconds/60)}:${String(seconds%60).padStart(2,'0')}`},1000)}
 }
-function showSolution(){const q=currentList[currentIndex];$('#solution').innerHTML='<strong>Musterlösung / Erwartungshorizont</strong><ul>'+q.answer.map(a=>`<li>${a}</li>`).join('')+'</ul>';$('#solution').classList.remove('hidden');$('#rating').classList.remove('hidden')}
+function showSolution(){const q=currentList[currentIndex];const title=q.solutionType||'Musterlösung / Erwartungshorizont';$('#solution').innerHTML=`<strong>${title}</strong><ol class="solution-list">${q.answer.map(a=>`<li>${a}</li>`).join('')}</ol><p class="solution-note">Die Musterlösung ist ein lernorientierter Erwartungshorizont. Bei Rechtsfragen sind die im Prüfungszeitpunkt geltenden Vorschriften maßgeblich.</p>`;$('#solution').classList.remove('hidden');$('#rating').classList.remove('hidden')}
 function next(){currentIndex++; if(examMode){examRemaining--; if(examRemaining<=0||currentIndex>=currentList.length){finishExam();return}} showQuestion()}
 function finishExam(){clearInterval(timerHandle);const attempted=currentList.slice(0,currentIndex+1),known=attempted.filter(q=>rating(q.id)==='known').length;state.history.unshift({date:new Date().toLocaleString('de-DE'),total:attempted.length,known});state.history=state.history.slice(0,30);save();alert(`Prüfung beendet: ${known} von ${attempted.length} Fragen als sicher bewertet.`);setView('dashboard')}
 function renderExamSetup(){
