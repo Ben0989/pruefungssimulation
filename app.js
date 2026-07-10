@@ -158,3 +158,76 @@ $('#evaluateBtn').onclick=evaluate;$('#showAnswerBtn').onclick=showSolution;$('#
 $('#rating').onclick=e=>{const r=e.target.dataset.rating;if(!r)return;const q=currentList[currentIndex];state.ratings[q.id]=r;save()};
 $('#resetBtn').onclick=()=>{if(confirm('Den gesamten Lernfortschritt und alle Antworten wirklich löschen?')){localStorage.removeItem('beTrainerStateV2');location.reload()}};
 fillCategories();updateStats();renderDashboard();
+
+/* V4 Detmold-Prüfermodus: strengere rubrizierte Volltextbewertung und Gesetzestrainer */
+const LAW_LIBRARY=window.LAW_LIBRARY||[];
+const V4_RUBRICS={
+ 'be42':[
+  {part:1,label:'§ 26 StVO bzw. Fußgängerüberweg rechtlich eingeordnet',points:1,terms:['§ 26','26 stvo','fussgangeruberweg']},
+  {part:1,label:'Annäherung mit mäßiger Geschwindigkeit',points:2,terms:['massige geschwindigkeit','mäßig','geschwindigkeit verringern','langsam annahern']},
+  {part:1,label:'Erkennbar Querungswilligen das Überqueren ermöglichen',points:2,terms:['uberqueren ermoglichen','vorrang','queren lassen','querungswill']},
+  {part:1,label:'Erforderlichenfalls warten bzw. anhalten',points:2,terms:['warten','anhalten','stehen bleiben']},
+  {part:1,label:'Überholverbot am Fußgängerüberweg',points:2,terms:['nicht uberholen','uberholverbot']},
+  {part:1,label:'Gefährdungsausschluss bzw. § 1 StVO',points:1,terms:['§ 1','gefahrdung','schadigung','rucksicht']},
+  {part:2,label:'Frühzeitiges Verzögern oder eindeutiges Anhalten als sinnvolle Kommunikation',points:2,terms:['langsam heranfahren','verzogern','geschwindigkeit reduzieren','anhalten']},
+  {part:2,label:'Blickkontakt und Beobachtung des Fußgängers',points:2,terms:['blickkontakt','beobachten']},
+  {part:2,label:'Handzeichen oder Lichthupe können missverstanden werden',points:2,terms:['handzeichen','lichthupe','missverstand']},
+  {part:2,label:'Gefahr durch Gegenverkehr, zweiten Fahrstreifen oder rückwärtigen Verkehr erklärt',points:2,terms:['ruckwart','hintermann','gegenverkehr','zweiter fahrstreifen','uberholen konnte']},
+  {part:2,label:'Umfeldprüfung bleibt erforderlich',points:2,terms:['umfeld','verkehr beobachten','andere verkehrsteilnehmer','sicherstellen']},
+  {part:3,label:'Abstand zum vorausfahrenden Lkw vergrößern',points:2,terms:['abstand erhohen','abstand vergrossern','mehr abstand']},
+  {part:3,label:'Lkw kann Überweg, Zeichen oder Fußgänger verdecken',points:3,terms:['verdecken','sichtbehinderung','sicht versperr','fussganger nicht sehen','verkehrszeichen']},
+  {part:3,label:'Mit plötzlichem Bremsen oder Anhalten des Lkw rechnen',points:3,terms:['plotzlich brems','lkw bremst','lkw anhalt','bremsbereit']},
+  {part:3,label:'Nicht am Lkw vorbeifahren; Sichtbereich durch Abstand vergrößern',points:2,terms:['nicht vorbeifahren','nicht uberholen','sichtbereich','seitlich vorbeischauen']}
+ ]
+};
+function v4Norm(s){return norm(s)}
+function v4Match(ans,terms){const n=v4Norm(ans);return terms.some(t=>n.includes(v4Norm(t)))}
+function v4Grade(p){return p>=92?'1':p>=81?'2':p>=67?'3':p>=50?'4':p>=30?'5':'6'}
+function v4EvaluateRubric(q,ans){
+ const rubric=V4_RUBRICS[q.id]; if(!rubric)return null;
+ const rows=rubric.map(r=>({...r,hit:v4Match(ans,r.terms)}));
+ const max=rows.reduce((a,r)=>a+r.points,0),got=rows.reduce((a,r)=>a+(r.hit?r.points:0),0);
+ const pct=Math.round(got/max*100),grade=v4Grade(pct);
+ const byPart=[1,2,3].map(part=>{const x=rows.filter(r=>r.part===part);return {part,got:x.reduce((a,r)=>a+(r.hit?r.points:0),0),max:x.reduce((a,r)=>a+r.points,0)}});
+ return {rows,max,got,pct,grade,byPart};
+}
+const _evaluate=evaluate;
+evaluate=function(){
+ const q=currentList[currentIndex],ans=$('#answerInput').value.trim();if(!ans)return;
+ const r=v4EvaluateRubric(q,ans);if(!r){_evaluate();return}
+ persistAnswer();
+ const hit=r.rows.filter(x=>x.hit),miss=r.rows.filter(x=>!x.hit);
+ const solution=(q.answer||[]).filter(x=>!/^Prüfungshinweis|^Erwarteter Abschluss/i.test(x));
+ const improved=`1. Fahrzeugführer müssen sich dem Fußgängerüberweg nach § 26 StVO mit mäßiger Geschwindigkeit nähern. Erkennbar querungswilligen Fußgängern sowie Fahrenden von Krankenfahrstühlen oder Rollstühlen ist das Überqueren zu ermöglichen; erforderlichenfalls muss gewartet werden. Am Fußgängerüberweg darf nicht überholt werden.\n\n2. Sinnvoll sind frühzeitiges Verzögern, eindeutiges Anhalten, Blickkontakt und fortlaufende Umfeldbeobachtung. Handzeichen oder Lichthupe sind problematisch, weil sie als Freigabe missverstanden werden können, obwohl Gegenverkehr, ein zweiter Fahrstreifen oder nachfolgende Fahrzeuge die Situation nicht erkannt haben.\n\n3. Hinter einem Lkw ist der Abstand zu vergrößern. Der Lkw kann das Zeichen, den Überweg und querungswillige Fußgänger verdecken. Außerdem ist mit einem plötzlichen Bremsen oder Anhalten des Lkw zu rechnen; ein Vorbeifahren oder Überholen wäre besonders gefährlich.`;
+ $('#evaluation').innerHTML=`<div class="eval-head"><div><span class="muted">Detmold-Prüfermodus · rubrizierte Volltextauswertung</span><div class="grade">Note ${r.grade}</div></div><div class="score-circle">${r.pct}%</div></div>
+ <p class="evaluation-summary">${r.pct>=81?'Die Antwort ist fachlich weitgehend tragfähig, aber nicht vollständig.':'Die Grundrichtung ist erkennbar; mehrere ausdrücklich erwartete Rechts- und Gefahrenaspekte fehlen.'}</p>
+ <div class="score-breakdown"><strong>Gesamt:</strong> ${r.got} von ${r.max} Punkten · ${r.pct}% · Note ${r.grade}<br>${r.byPart.map(x=>`Teilfrage ${x.part}: ${x.got}/${x.max} Punkte`).join(' · ')}</div>
+ <section class="feedback-section"><h3>Einzelbewertung</h3><table class="rubric-table"><thead><tr><th>Prüfungskriterium</th><th>Bewertung</th><th>Punkte</th></tr></thead><tbody>${r.rows.map(x=>`<tr><td>${escapeHtml(x.label)}</td><td>${x.hit?'✓ enthalten':'✗ fehlt'}</td><td>${x.hit?x.points:0}/${x.points}</td></tr>`).join('')}</tbody></table></section>
+ <section class="feedback-section"><h3>Was an deiner Antwort richtig war</h3>${hit.length?`<ul>${hit.map(x=>`<li>${escapeHtml(x.label)}</li>`).join('')}</ul>`:'<p>Kein Pflichtkriterium wurde eindeutig erkannt.</p>'}</section>
+ <section class="feedback-section critical-miss"><h3>Fehlende prüfungsrelevante Inhalte</h3>${miss.length?`<ul>${miss.map(x=>`<li>${escapeHtml(x.label)} – dafür fehlen ${x.points} Punkt${x.points===1?'':'e'}.</li>`).join('')}</ul>`:'<p>Keine Pflichtinhalte fehlen.</p>'}</section>
+ <section class="feedback-section"><h3>Warum Punkte fehlen</h3><p>Die Bewertung berücksichtigt nicht nur einzelne Stichwörter. Erwartet werden vollständige Regelung, konkretes Verhalten, Gefahrenbegründung und Folgerung. Eine richtige Grundidee erhält deshalb nicht automatisch die volle Punktzahl.</p></section>
+ <section class="feedback-section"><h3>Richtige Lösung / Erwartungshorizont</h3><ol class="solution-list">${solution.map(x=>`<li>${escapeHtml(x)}</li>`).join('')}</ol></section>
+ <section class="feedback-section"><h3>So hätte die Antwort besser formuliert werden können</h3><div class="improved-answer">${escapeHtml(improved).replace(/\n/g,'<br>')}</div></section>
+ <div class="legal-note"><strong>Rechtsgrundlage:</strong> § 26 StVO. Der Gesetzestrainer enthält dazu eine prüfungsorientierte Zusammenfassung und einen Link zur amtlichen Fassung.</div>`;
+ $('#evaluation').classList.remove('hidden');$('#rating').classList.remove('hidden');state.lastEvaluation={id:q.id,pct:r.pct,grade:r.grade};save();
+};
+
+// Gesetzestrainer in Navigation und Ansicht
+if(!navItems.some(x=>x[0]==='laws')){
+ navItems.splice(navItems.length-1,0,['laws','Gesetzestrainer']);
+ $('#nav').innerHTML=navItems.map(([id,n],i)=>`<button class="nav-btn ${i===0?'active':''}" data-view="${id}">${n}</button>`).join('');
+ document.querySelectorAll('.nav-btn').forEach(b=>b.onclick=()=>setView(b.dataset.view));
+}
+const _setView=setView;
+setView=function(v){
+ if(v!=='laws'){_setView(v);return}
+ document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active',b.dataset.view===v));
+ ['dashboard','trainer','examSetup','history','laws'].forEach(id=>$('#'+id)?.classList.add('hidden'));
+ $('#laws').classList.remove('hidden');renderLaws();
+};
+function renderLaws(){
+ const laws=[...new Set(LAW_LIBRARY.map(x=>x.law))];
+ $('#laws').innerHTML=`<h2>Gesetzestrainer</h2><p class="muted">Prüfungsorientierte Kurzfassungen. Für verbindliche Wortlaute und den Rechtsstand am Prüfungstag ist die verlinkte amtliche Fassung maßgeblich.</p><div class="law-toolbar"><select id="lawFilter"><option>Alle Gesetze</option>${laws.map(x=>`<option>${x}</option>`).join('')}</select><input id="lawSearch" type="search" placeholder="Paragraph oder Stichwort"></div><div id="lawResults"></div>`;
+ const draw=()=>{const f=$('#lawFilter').value,t=v4Norm($('#lawSearch').value);const arr=LAW_LIBRARY.filter(x=>(f==='Alle Gesetze'||x.law===f)&&(!t||v4Norm(JSON.stringify(x)).includes(t)));$('#lawResults').innerHTML=arr.map(x=>`<article class="law-card"><h3>${escapeHtml(x.law)} ${escapeHtml(x.section)} – ${escapeHtml(x.title)}</h3><p>${escapeHtml(x.summary)}</p><p class="law-source"><a href="${x.source}" target="_blank" rel="noopener">Amtliche Fassung öffnen</a></p></article>`).join('')||'<p>Keine passenden Vorschriften gefunden.</p>'};
+ $('#lawFilter').onchange=draw;$('#lawSearch').oninput=draw;draw();
+}
