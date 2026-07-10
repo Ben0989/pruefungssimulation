@@ -4,73 +4,48 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#0f172a">
-  <title>Fahrlehrerprüfung BE Trainer – mit Musterlösungen</title>
+  <title>Fahrlehrerprüfung BE Trainer</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <header class="topbar">
-  <div>
-    <div class="eyebrow">Detmold · Klasse BE</div>
-    <h1>Fahrlehrerprüfung Trainer</h1>
-  </div>
+  <div><div class="eyebrow">Detmold · Klasse BE</div><h1>Fahrlehrerprüfung Trainer</h1></div>
   <button id="resetBtn" class="ghost">Fortschritt löschen</button>
 </header>
-
 <main class="layout">
   <aside class="sidebar">
     <nav id="nav"></nav>
     <section class="stats-card">
-      <h2>Fortschritt</h2>
-      <div class="ring"><span id="progressPct">0%</span></div>
+      <h2>Fortschritt</h2><div class="ring"><span id="progressPct">0%</span></div>
       <div class="stat-row"><span>Sicher</span><strong id="knownCount">0</strong></div>
       <div class="stat-row"><span>Unsicher</span><strong id="unsureCount">0</strong></div>
       <div class="stat-row"><span>Offen</span><strong id="openCount">0</strong></div>
     </section>
   </aside>
-
   <section class="content">
-    <div class="toolbar">
+    <div class="toolbar" id="toolbar">
+      <select id="modeSelect" aria-label="Prüfungsart"><option value="oral">Mündlich</option><option value="written">Schriftlich</option></select>
       <select id="categorySelect" aria-label="Fachgebiet"></select>
-      <select id="statusSelect" aria-label="Lernstatus">
-        <option value="all">Alle Lernstände</option>
-        <option value="open">Offen</option>
-        <option value="unsure">Unsicher</option>
-        <option value="known">Sicher</option>
-      </select>
+      <select id="statusSelect" aria-label="Lernstatus"><option value="all">Alle Lernstände</option><option value="open">Offen</option><option value="unsure">Unsicher</option><option value="known">Sicher</option></select>
       <input id="searchInput" type="search" placeholder="Fragen durchsuchen …">
       <button id="randomBtn">Zufallsfrage</button>
     </div>
-
     <section id="dashboard" class="panel"></section>
-
     <section id="trainer" class="panel hidden">
-      <div class="question-meta">
-        <span id="categoryBadge" class="badge"></span>
-        <span id="counter"></span>
-        <span id="timer"></span>
-      </div>
-      <h2 id="questionTitle"></h2>
-      <p id="questionContext" class="context"></p>
-      <ol id="subquestions" class="subquestions"></ol>
+      <div class="question-meta"><span id="modeBadge" class="badge secondary"></span><span id="categoryBadge" class="badge"></span><span id="counter"></span><span id="timer"></span></div>
+      <h2 id="questionTitle"></h2><p id="questionContext" class="context"></p><ol id="subquestions" class="subquestions"></ol>
       <textarea id="answerInput" placeholder="Antwort frei formulieren …"></textarea>
-      <div class="actions">
-        <button id="showAnswerBtn">Musterlösung anzeigen</button>
-        <button id="nextBtn" class="ghost">Überspringen</button>
+      <div class="actions primary-actions">
+        <button id="evaluateBtn" disabled>Antwort auswerten</button>
+        <button id="showAnswerBtn" class="ghost">Musterlösung</button>
+        <button id="skipBtn" class="ghost">Überspringen</button>
       </div>
-      <div id="solution" class="solution hidden"></div>
-      <div id="rating" class="rating hidden">
-        <span>Selbsteinschätzung:</span>
-        <button data-rating="open" class="danger">Nicht gekonnt</button>
-        <button data-rating="unsure" class="warn">Unsicher</button>
-        <button data-rating="known" class="success">Sicher</button>
-      </div>
+      <div class="actions navigation-actions"><button id="prevBtn" class="ghost">← Zurück</button><button id="nextBtn" class="ghost">Weiter →</button></div>
+      <div id="evaluation" class="evaluation hidden"></div><div id="solution" class="solution hidden"></div>
+      <div id="rating" class="rating hidden"><span>Selbsteinschätzung:</span><button data-rating="open" class="danger">Nicht gekonnt</button><button data-rating="unsure" class="warn">Unsicher</button><button data-rating="known" class="success">Sicher</button></div>
     </section>
-
-    <section id="examSetup" class="panel hidden"></section>
-    <section id="history" class="panel hidden"></section>
+    <section id="examSetup" class="panel hidden"></section><section id="history" class="panel hidden"></section>
   </section>
 </main>
-<script src="data.js"></script>
-<script src="app.js"></script>
-</body>
-</html>
+<script src="data.js"></script><script src="app.js"></script>
+</body></html>

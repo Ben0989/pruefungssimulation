@@ -1,20 +1,17 @@
-FAHRLEHRERPRÜFUNG BE TRAINER
+Fahrlehrerprüfung BE Trainer – Version 2
 
 Start:
-1. Ordner entpacken.
-2. index.html doppelt anklicken.
-3. Die Anwendung läuft vollständig offline im Browser.
+1. ZIP entpacken.
+2. index.html im Browser öffnen.
 
-Funktionen:
-- 423 Lernkarten aus den bereitgestellten Unterlagen
-- Fachfilter und Volltextsuche
-- Mündliche und schriftliche Aufgaben
-- Zufallsfragen
-- Schwächentraining
-- Prüfungsmodus mit Timer
-- Lernfortschritt im Browser (LocalStorage)
+Neu:
+- getrennte Lern- und Simulationsmodi für mündliche und schriftliche Prüfung
+- automatische Stichwortprüfung mit Prozentwert und Schulnote
+- Anzeige erkannter und fehlender Kernaspekte
+- Zurück- und Weiter-Schaltflächen
+- schriftliche Simulation mit 5 Aufgaben: Verkehrsverhalten, Recht, Technik und 2x Pädagogik/Fahrlehrerwesen
+- mündliche Simulation mit Prüfungskomplexen aus allen vier Fachgebieten
+- beim PDF-Import getrennte Folgefragen wurden zu zusammenhängenden Komplexen verbunden
 
 Hinweis:
-Der Lernstand wird lokal im jeweils verwendeten Browser gespeichert.
-
-UPDATE: Für sämtliche 163 Aufgaben aus „Heft Prüfungsaufgaben BE“ wurden kompakte Musterlösungen/Erwartungshorizonte ergänzt. Die Lösungen dienen dem Lernen und ersetzen bei Rechtsfragen nicht die Kontrolle des aktuellen Gesetzesstands.
+Die automatische Auswertung ist eine Lernhilfe. Stark abweichende, aber fachlich richtige Formulierungen können zu niedrig bewertet werden. Maßgeblich bleibt die Musterlösung und der aktuelle Rechtsstand.
